@@ -1,0 +1,143 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
+
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [helperProfile, setHelperProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState({
+    lat: 12.9716, // Bengaluru default
+    lng: 77.5946,
+    accuracy: 10,
+    address: 'Bengaluru Central, Karnataka'
+  });
+
+  // Track browser geolocation on load
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy),
+            address: 'Current GPS Location'
+          };
+          setUserLocation(loc);
+          // Inform backend to position seed helpers nearby
+          api.post('/seed/relocate', { lat: loc.lat, lng: loc.lng }).catch(() => {});
+        },
+        (err) => {
+          console.warn('Geolocation warning (using default Indian tech hub coords):', err.message);
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+  }, []);
+
+  // Fetch current user if token exists
+  const fetchCurrentUser = async () => {
+    const token = localStorage.getItem('help_radius_token');
+    if (!token) {
+      // Default to Priya Sharma demo account so user can immediately test!
+      loginAsDemo('user');
+      return;
+    }
+    try {
+      const res = await api.get('/users/me');
+      setUser(res.data.user);
+      setHelperProfile(res.data.helper);
+    } catch (err) {
+      console.warn('Could not restore user from token, switching to demo user.');
+      loginAsDemo('user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
+
+  // Login
+  const login = async (email, password) => {
+    const res = await api.post('/auth/login', { email, password });
+    localStorage.setItem('help_radius_token', res.data.token);
+    setUser(res.data.user);
+    const meRes = await api.get('/users/me');
+    setHelperProfile(meRes.data.helper);
+    return res.data;
+  };
+
+  // Register
+  const register = async (userData) => {
+    const res = await api.post('/auth/register', userData);
+    localStorage.setItem('help_radius_token', res.data.token);
+    setUser(res.data.user);
+    return res.data;
+  };
+
+  // Quick Switcher for College Project Demo (Requester <-> Helper <-> Admin)
+  const loginAsDemo = async (role = 'user') => {
+    setLoading(true);
+    let email = 'priya@example.com';
+    if (role === 'helper') email = 'arjunverma@helpradius.org';
+    if (role === 'admin') email = 'admin@helpradius.org';
+
+    try {
+      const res = await api.post('/auth/login', { email, password: 'password123' });
+      localStorage.setItem('help_radius_token', res.data.token);
+      setUser(res.data.user);
+      const meRes = await api.get('/users/me');
+      setHelperProfile(meRes.data.helper);
+    } catch (e) {
+      console.error('Demo login failed', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Logout
+  const logout = () => {
+    localStorage.removeItem('help_radius_token');
+    setUser(null);
+    setHelperProfile(null);
+  };
+
+  // Toggle helper availability
+  const toggleAvailability = async () => {
+    if (!helperProfile) return;
+    try {
+      const res = await api.patch('/helpers/me/availability', {
+        isAvailable: !helperProfile.isAvailable
+      });
+      setHelperProfile(prev => ({ ...prev, isAvailable: res.data.isAvailable }));
+    } catch (e) {
+      console.error('Failed to toggle availability', e);
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        helperProfile,
+        loading,
+        userLocation,
+        setUserLocation,
+        login,
+        register,
+        logout,
+        loginAsDemo,
+        toggleAvailability,
+        refreshUser: fetchCurrentUser
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);
