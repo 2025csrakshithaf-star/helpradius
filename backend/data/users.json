@@ -44,5 +44,34 @@
       },
       "createdAt": "2026-11-16T10:29:12.445Z"
     }
+  ],
+  [
+    "usr_1794825631394_7072",
+    {
+      "id": "usr_1794825631394_7072",
+      "name": "sanhitha",
+      "email": "chotipatre369@gmail.com",
+      "phone": "+919141343886",
+      "password": "sanhitha",
+      "verificationId": "2025cs0433",
+      "idType": "College / Student ID",
+      "role": "user",
+      "isHelper": false,
+      "address": "Current GPS Location",
+      "avatar": "https://api.dicebear.com/7.x/initials/svg?seed=sanhitha",
+      "emergencyContacts": [
+        {
+          "id": "d4105c0c-b16b-4535-8342-f773ca23eba5",
+          "name": "santhu",
+          "phone": "+911234567891",
+          "relationship": "Parent"
+        }
+      ],
+      "permissions": {
+        "locationGranted": true,
+        "notificationsGranted": true
+      },
+      "createdAt": "2026-11-16T10:40:31.400Z"
+    }
   ]
 ]
