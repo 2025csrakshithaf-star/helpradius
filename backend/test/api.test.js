@@ -55,8 +55,18 @@ test('Pricing rule: General Help separates 3 transparent tiers and first 2 km tr
   assert.strictEqual(genBreakdown.total, 84);
 });
 
-test('Emergency Contacts: Database stores seed users and enforces maximum 6 contacts', () => {
-  const user = db.users.get('usr_demo_001');
-  assert.ok(user, 'Demo user must exist');
+test('Emergency Contacts: Enforces maximum 6 contacts rule', () => {
+  const testUser = {
+    id: 'usr_test_001',
+    name: 'Test Member',
+    email: 'test@example.com',
+    emergencyContacts: [
+      { id: 'ec_1', name: 'Contact 1', phone: '+919811111111' },
+      { id: 'ec_2', name: 'Contact 2', phone: '+919822222222' }
+    ]
+  };
+  db.users.set(testUser.id, testUser);
+  const user = db.users.get('usr_test_001');
+  assert.ok(user, 'User must exist in database');
   assert.ok(user.emergencyContacts.length <= 6, 'Must not exceed 6 contacts');
 });

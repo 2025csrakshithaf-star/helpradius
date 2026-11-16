@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function Navbar({ onOpenSOS }) {
-  const { user, helperProfile, loginAsDemo, logout, toggleAvailability } = useAuth();
+  const { user, helperProfile, logout, toggleAvailability } = useAuth();
   const { notifications } = useNotifications();
   const [backendStatus, setBackendStatus] = useState('checking');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -123,38 +123,6 @@ export default function Navbar({ onOpenSOS }) {
 
           {/* Right Action buttons */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Quick Demo Role Switcher for Examiners */}
-            <div className="hidden xl:flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-              <span className="text-[10px] text-slate-500 uppercase font-bold px-1.5">Demo:</span>
-              <button
-                onClick={() => loginAsDemo('user')}
-                className={`px-2 py-0.5 rounded-lg font-semibold transition-all ${
-                  user?.id === 'usr_demo_001' ? 'bg-white shadow text-rose-600' : 'text-slate-600 hover:text-slate-900'
-                }`}
-                title="Priya Sharma (Requester Demo)"
-              >
-                Priya
-              </button>
-              <button
-                onClick={() => loginAsDemo('helper')}
-                className={`px-2 py-0.5 rounded-lg font-semibold transition-all ${
-                  user?.id === 'hlp_001' ? 'bg-white shadow text-emerald-600' : 'text-slate-600 hover:text-slate-900'
-                }`}
-                title="Arjun Verma (Helper Demo)"
-              >
-                Arjun
-              </button>
-              <button
-                onClick={() => loginAsDemo('admin')}
-                className={`px-2 py-0.5 rounded-lg font-semibold transition-all ${
-                  user?.role === 'admin' ? 'bg-white shadow text-amber-700' : 'text-slate-600 hover:text-slate-900'
-                }`}
-                title="Admin Demo"
-              >
-                Admin
-              </button>
-            </div>
-
             {/* User Session HUD: Signed in vs Signed out */}
             {user ? (
               <div className="flex items-center gap-2">
@@ -165,12 +133,12 @@ export default function Navbar({ onOpenSOS }) {
                   <img
                     src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`}
                     alt={user.name}
-                    className="w-6 h-6 rounded-lg object-cover border border-slate-300"
+                    className="w-7 h-7 rounded-lg object-cover border border-slate-300"
                   />
                   <div className="hidden sm:block text-left text-xs leading-none">
-                    <span className="font-bold text-slate-900 block truncate max-w-[100px]">{user.name}</span>
-                    <span className="text-[10px] text-slate-500 capitalize">
-                      {user.role === 'admin' ? 'Admin' : (user.isHelper ? 'Helper' : 'Requester')}
+                    <span className="font-bold text-slate-900 block truncate max-w-[120px]">{user.name}</span>
+                    <span className="text-[10px] text-slate-500 font-semibold capitalize">
+                      {user.role === 'admin' ? 'Admin' : (user.isHelper ? 'Volunteer Helper' : 'Requester')}
                     </span>
                   </div>
                 </Link>
@@ -186,14 +154,14 @@ export default function Navbar({ onOpenSOS }) {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1.5 border border-slate-200"
                 >
                   <LogIn className="w-3.5 h-3.5 text-slate-500" />
                   <span>Log In</span>
                 </Link>
                 <Link
                   to="/register"
-                  className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-all flex items-center gap-1.5"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-all flex items-center gap-1.5"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>Register</span>
@@ -293,28 +261,6 @@ export default function Navbar({ onOpenSOS }) {
               Admin Moderation Panel
             </Link>
           )}
-
-          <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2">
-            <span className="text-xs text-slate-500 w-full font-bold">Quick Demo Accounts:</span>
-            <button
-              onClick={() => { loginAsDemo('user'); setMobileMenuOpen(false); }}
-              className="px-2.5 py-1 text-xs bg-slate-100 rounded-md font-medium text-slate-700"
-            >
-              Priya (Requester)
-            </button>
-            <button
-              onClick={() => { loginAsDemo('helper'); setMobileMenuOpen(false); }}
-              className="px-2.5 py-1 text-xs bg-emerald-50 text-emerald-700 rounded-md font-medium"
-            >
-              Arjun (Helper)
-            </button>
-            <button
-              onClick={() => { loginAsDemo('admin'); setMobileMenuOpen(false); }}
-              className="px-2.5 py-1 text-xs bg-amber-50 text-amber-800 rounded-md font-medium"
-            >
-              Admin
-            </button>
-          </div>
         </div>
       )}
     </header>

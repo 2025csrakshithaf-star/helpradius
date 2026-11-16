@@ -276,7 +276,7 @@ export default function ActiveRequestPage() {
               lat: request.location.lat + 0.007,
               lng: request.location.lng + 0.005
             }}
-            helperName={helper?.name || 'Arjun Verma'}
+            helperName={helper?.name || 'Assigned Volunteer'}
             height="400px"
           />
 
@@ -292,7 +292,7 @@ export default function ActiveRequestPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 justify-center sm:justify-start">
-                  <h3 className="font-extrabold text-slate-900 text-lg">{helper?.name || 'Arjun Verma'}</h3>
+                  <h3 className="font-extrabold text-slate-900 text-lg">{helper?.name || 'Assigned Volunteer'}</h3>
                   {helper?.safetyEligible && (
                     <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold">
                       Verified Safety Helper

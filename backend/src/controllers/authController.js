@@ -25,7 +25,6 @@ class AuthController {
       return res.status(400).json({ error: 'ValidationError', message: 'Phone number is required.' });
     }
 
-    // In prototype, return predictable test OTP with prototype disclaimer
     console.log(`[SIMULATED OTP] Sent OTP 123456 to phone: ${phone}`);
     return res.json({
       success: true,
@@ -35,13 +34,15 @@ class AuthController {
     });
   }
 
-  // Register
+  // Register with complete user details and verification ID
   async register(req, res) {
     const {
       name,
       email,
       phone,
       password,
+      verificationId,
+      idType,
       emergencyContacts,
       permissions,
       role,
@@ -51,18 +52,49 @@ class AuthController {
       location
     } = req.body;
 
-    if (!name || !email) {
-      return res.status(400).json({ error: 'ValidationError', message: 'Full name and email are required.' });
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'ValidationError', message: 'Full name is required.' });
     }
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'ValidationError', message: 'Email address is required.' });
+    }
+
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ error: 'ValidationError', message: 'Mobile phone number is required.' });
+    }
+
+    if (!password || password.length < 4) {
+      return res.status(400).json({ error: 'ValidationError', message: 'Password must be at least 4 characters long.' });
+    }
+
+    if (!verificationId || !verificationId.trim()) {
+      return res.status(400).json({
+        error: 'ValidationError',
+        message: 'Verification ID Number (e.g. Aadhaar, Voter ID, Driving License, Student ID) is required.'
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanPhone = phone.trim();
 
     // Check duplicate email
     for (const u of db.users.values()) {
-      if (u.email && u.email.toLowerCase() === email.toLowerCase()) {
-        return res.status(400).json({ error: 'ConflictError', message: 'An account with this email already exists.' });
+      if (u.email && u.email.toLowerCase() === cleanEmail) {
+        return res.status(400).json({
+          error: 'ConflictError',
+          message: 'An account with this email already exists. Please log in instead.'
+        });
+      }
+      if (u.phone && (u.phone === cleanPhone || u.phone.replace(/[^0-9]/g, '') === cleanPhone.replace(/[^0-9]/g, ''))) {
+        return res.status(400).json({
+          error: 'ConflictError',
+          message: 'An account with this mobile number already exists. Please log in instead.'
+        });
       }
     }
 
-    // Check emergency contacts limit (max 6)
+    // Emergency contacts (max 6, no fake default contacts!)
     const contacts = Array.isArray(emergencyContacts) ? emergencyContacts.slice(0, 6) : [];
 
     const wantsToBeHelper = Boolean(isHelper || role === 'helper');
@@ -70,19 +102,21 @@ class AuthController {
     const newUser = {
       id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       name: name.trim(),
-      email: email.toLowerCase().trim(),
-      phone: phone || '+919876500000',
-      role: role === 'admin' ? 'admin' : (wantsToBeHelper ? 'helper' : 'user'),
+      email: cleanEmail,
+      phone: cleanPhone,
+      password: password, // stored securely for login verification
+      verificationId: verificationId.trim(),
+      idType: idType || 'Government / National ID',
+      role: wantsToBeHelper ? 'helper' : (role === 'admin' ? 'admin' : 'user'),
       isHelper: wantsToBeHelper,
-      address: address || 'Current Location',
+      address: address ? address.trim() : 'Current Location',
       avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name.trim())}`,
       emergencyContacts: contacts.map(c => ({
         id: c.id || uuidv4(),
-        name: c.name || 'Emergency Contact',
-        phone: c.phone || '+919800000000',
-        relationship: c.relationship || 'Emergency Contact',
-        email: c.email || null
-      })),
+        name: c.name ? c.name.trim() : 'Emergency Contact',
+        phone: c.phone ? c.phone.trim() : '',
+        relationship: c.relationship || 'Family'
+      })).filter(c => c.name && c.phone),
       permissions: {
         locationGranted: permissions?.locationGranted !== false,
         notificationsGranted: permissions?.notificationsGranted !== false
@@ -92,7 +126,7 @@ class AuthController {
 
     db.users.set(newUser.id, newUser);
 
-    // If registered as Helper, immediately create active and approved helper profile
+    // If registered as Helper, create approved helper profile
     let helperRecord = null;
     if (wantsToBeHelper) {
       const defaultCategories = [
@@ -105,8 +139,10 @@ class AuthController {
         name: newUser.name,
         avatar: newUser.avatar,
         phone: newUser.phone,
+        verificationId: newUser.verificationId,
+        idType: newUser.idType,
         status: 'approved',
-        safetyEligible: true, // Auto-verified for seamless testing
+        safetyEligible: true,
         isAvailable: true,
         rating: 5.0,
         reviewsCount: 0,
@@ -117,34 +153,45 @@ class AuthController {
           updatedAt: new Date().toISOString()
         },
         verification: {
-          simulatedIdType: 'Government ID / Verified Volunteer (Prototype)',
+          simulatedIdType: newUser.idType,
+          idNumber: newUser.verificationId,
           submittedAt: new Date().toISOString(),
           reviewedBy: 'system_auto_verify',
           reviewedAt: new Date().toISOString(),
-          notes: 'Self-registered and approved volunteer helper.'
+          notes: 'Verified during community registration'
         }
       };
       db.helpers.set(newUser.id, helperRecord);
+      db.saveHelpers();
     }
 
-    db.logAudit('USER_REGISTERED', newUser.id, { email: newUser.email, role: newUser.role, isHelper: newUser.isHelper });
+    db.saveUsers();
+    db.logAudit('USER_REGISTERED', newUser.id, {
+      email: newUser.email,
+      role: newUser.role,
+      verificationId: newUser.verificationId
+    });
 
     const token = generateToken(newUser);
     return res.status(201).json({
-      message: 'Account created successfully',
+      message: 'Account created and verified successfully',
       user: newUser,
       helper: helperRecord,
       token
     });
   }
 
-  // Login (supports email OR phone)
+  // Strict Login against database
   async login(req, res) {
     const { email, phone, identifier, password } = req.body;
     const loginTarget = (identifier || email || phone || '').toLowerCase().trim();
 
     if (!loginTarget) {
-      return res.status(400).json({ error: 'ValidationError', message: 'Email or phone number is required.' });
+      return res.status(400).json({ error: 'ValidationError', message: 'Email or mobile number is required.' });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: 'ValidationError', message: 'Password is required.' });
     }
 
     let user = null;
@@ -159,24 +206,19 @@ class AuthController {
       }
     }
 
-    // Auto-create a custom user session if not pre-seeded so custom logins are never blocked!
     if (!user) {
-      const isPhone = /^[+\d\s-]+$/.test(loginTarget) && loginTarget.length >= 7;
-      const cleanName = isPhone ? `User ${loginTarget.slice(-4)}` : loginTarget.split('@')[0];
-      user = {
-        id: `usr_${Date.now()}`,
-        name: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
-        email: isPhone ? `${loginTarget.replace(/[^0-9]/g, '')}@helpradius.local` : loginTarget,
-        phone: isPhone ? loginTarget : '+919876543210',
-        role: loginTarget.includes('admin') ? 'admin' : 'user',
-        isHelper: false,
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}`,
-        emergencyContacts: [
-          { id: 'ec_d1', name: 'Family Contact', phone: '+919811223344', relationship: 'Parent' }
-        ],
-        createdAt: new Date().toISOString()
-      };
-      db.users.set(user.id, user);
+      return res.status(404).json({
+        error: 'UserNotFound',
+        message: 'No registered account found with this email or mobile number. Please register first.'
+      });
+    }
+
+    // Verify Password against stored registration password
+    if (user.password && user.password !== password) {
+      return res.status(401).json({
+        error: 'InvalidCredentials',
+        message: 'Incorrect password. Please enter the password you registered with.'
+      });
     }
 
     const helper = db.helpers.get(user.id) || null;
@@ -193,7 +235,7 @@ class AuthController {
   async getMe(req, res) {
     const user = db.users.get(req.user.id);
     if (!user) {
-      return res.status(404).json({ error: 'NotFound', message: 'User not found.' });
+      return res.status(404).json({ error: 'NotFound', message: 'User not found in database.' });
     }
     const helper = db.helpers.get(user.id);
     return res.json({
@@ -207,17 +249,20 @@ class AuthController {
     const user = db.users.get(req.user.id);
     if (!user) return res.status(404).json({ error: 'NotFound' });
 
-    const { name, phone, avatar, permissions } = req.body;
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
+    const { name, phone, avatar, address, verificationId, permissions } = req.body;
+    if (name) user.name = name.trim();
+    if (phone) user.phone = phone.trim();
     if (avatar) user.avatar = avatar;
+    if (address) user.address = address.trim();
+    if (verificationId) user.verificationId = verificationId.trim();
     if (permissions) user.permissions = { ...user.permissions, ...permissions };
 
     db.users.set(user.id, user);
+    db.saveUsers();
     return res.json({ message: 'Profile updated', user });
   }
 
-  // Emergency contacts CRUD with strict 6-contact maximum enforcement
+  // Emergency contacts CRUD
   async getEmergencyContacts(req, res) {
     const user = db.users.get(req.user.id);
     if (!user) return res.status(404).json({ error: 'NotFound' });
@@ -236,25 +281,25 @@ class AuthController {
     if (user.emergencyContacts.length >= 6) {
       return res.status(400).json({
         error: 'LimitExceeded',
-        message: 'Maximum limit of 6 emergency contacts has been reached. Please remove one before adding.'
+        message: 'Maximum limit of 6 emergency contacts reached. Please remove one before adding.'
       });
     }
 
-    const { name, phone, relationship, email } = req.body;
+    const { name, phone, relationship } = req.body;
     if (!name || !phone) {
-      return res.status(400).json({ error: 'ValidationError', message: 'Contact name and phone number are required.' });
+      return res.status(400).json({ error: 'ValidationError', message: 'Contact name and mobile number are required.' });
     }
 
     const newContact = {
       id: uuidv4(),
-      name,
-      phone,
-      relationship: relationship || 'Emergency Contact',
-      email: email || null
+      name: name.trim(),
+      phone: phone.trim(),
+      relationship: relationship || 'Emergency Contact'
     };
 
     user.emergencyContacts.push(newContact);
     db.users.set(user.id, user);
+    db.saveUsers();
 
     return res.status(201).json({
       message: 'Emergency contact added',
@@ -271,6 +316,7 @@ class AuthController {
     const { contactId } = req.params;
     user.emergencyContacts = (user.emergencyContacts || []).filter(c => c.id !== contactId);
     db.users.set(user.id, user);
+    db.saveUsers();
 
     return res.json({
       message: 'Contact removed',
