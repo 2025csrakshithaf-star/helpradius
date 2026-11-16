@@ -75,13 +75,15 @@ export default function ActiveRequestPage() {
   };
 
   const handleCancel = async () => {
-    const reason = prompt('Please enter a cancellation reason:');
-    if (!reason) return;
+    const confirmCancel = window.confirm('Are you sure you want to cancel this assistance request?');
+    if (!confirmCancel) return;
     try {
-      const res = await api.patch(`/requests/${id}/cancel`, { reason });
+      const res = await api.patch(`/requests/${id}/cancel`, {
+        reason: 'Cancelled by requester'
+      });
       setRequest(res.data.request);
     } catch (e) {
-      alert('Could not cancel request.');
+      alert(e.response?.data?.message || 'Could not cancel request.');
     }
   };
 
@@ -124,22 +126,27 @@ export default function ActiveRequestPage() {
   const isSearching = request.status === 'searching';
   const isAcceptedOrActive = ['accepted', 'in_progress'].includes(request.status);
   const isCompleted = request.status === 'completed';
+  const isCancelled = request.status === 'cancelled';
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
       {/* Top Status Header */}
       <div className={`rounded-3xl p-6 text-white shadow-xl ${
-        isEmergency
-          ? 'bg-gradient-to-r from-rose-600 to-red-700 glow-red'
-          : (request.type === 'general' ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-gradient-to-r from-indigo-600 to-indigo-700')
+        isCancelled
+          ? 'bg-gradient-to-r from-slate-700 to-slate-800'
+          : (isEmergency
+            ? 'bg-gradient-to-r from-rose-600 to-red-700 glow-red'
+            : (request.type === 'general' ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-gradient-to-r from-indigo-600 to-indigo-700'))
       }`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-black uppercase tracking-wider backdrop-blur-sm">
-                {request.type} • {request.category.replace('_', ' ')}
+                {request.type} • {request.category?.replace('_', ' ')}
               </span>
-              <span className="px-3 py-1 rounded-full bg-black/20 text-xs font-black uppercase tracking-wider">
+              <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                isCancelled ? 'bg-rose-500/40 text-rose-200' : 'bg-black/20'
+              }`}>
                 Status: {request.status.replace('_', ' ')}
               </span>
             </div>
@@ -154,7 +161,7 @@ export default function ActiveRequestPage() {
 
           {/* Quick Action buttons */}
           <div className="flex items-center gap-2">
-            {isSearching && (
+            {!isCompleted && !isCancelled && (
               <button
                 onClick={handleCancel}
                 className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs backdrop-blur-sm transition-all"
@@ -162,7 +169,7 @@ export default function ActiveRequestPage() {
                 Cancel Request
               </button>
             )}
-            {isEmergency && (
+            {isEmergency && !isCancelled && !isCompleted && (
               <a
                 href="tel:112"
                 className="px-4 py-2 rounded-xl bg-white text-rose-600 font-black text-xs shadow-md flex items-center gap-1.5 hover:bg-rose-50"
@@ -170,6 +177,14 @@ export default function ActiveRequestPage() {
                 <PhoneCall className="w-3.5 h-3.5 text-rose-600" />
                 <span>Call 112</span>
               </a>
+            )}
+            {isCancelled && (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="px-4 py-2 rounded-xl bg-white text-slate-900 font-bold text-xs shadow-md hover:bg-slate-100"
+              >
+                Dashboard
+              </button>
             )}
           </div>
         </div>
@@ -320,6 +335,14 @@ export default function ActiveRequestPage() {
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Complete</span>
               </button>
+
+              <button
+                onClick={handleCancel}
+                className="flex-1 sm:flex-none px-4 py-3 rounded-2xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-bold text-xs border border-slate-200 transition-all flex items-center justify-center gap-1.5"
+              >
+                <XCircle className="w-4 h-4 text-rose-500" />
+                <span>Cancel</span>
+              </button>
             </div>
           </div>
         </div>
@@ -350,6 +373,29 @@ export default function ActiveRequestPage() {
           >
             Review Assistance & Confirm Safety
           </button>
+        </div>
+      )}
+
+      {/* CANCELLED STATUS NOTICE */}
+      {isCancelled && (
+        <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200 text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mx-auto shadow-inner">
+            <XCircle className="w-8 h-8 text-rose-500" />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-slate-900">Request Cancelled</h3>
+            <p className="text-xs text-slate-600 max-w-md mx-auto mt-1">
+              {request.cancellationReason || 'This request has been cancelled by the user'}. Search radius expansion and live tracking have ceased.
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="px-6 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow"
+            >
+              Return to Dashboard
+            </button>
+          </div>
         </div>
       )}
 

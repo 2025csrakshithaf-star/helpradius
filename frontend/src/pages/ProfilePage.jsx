@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import {
@@ -89,6 +90,26 @@ export default function ProfilePage() {
       setApplyingHelper(false);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="max-w-md mx-auto py-16 px-4 text-center space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+          <User className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-800">You are not signed in</h2>
+        <p className="text-xs text-slate-500">Sign in with your account or register with your details to manage your profile and emergency contacts.</p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Link to="/login" className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold shadow">
+            Sign In
+          </Link>
+          <Link to="/register" className="px-5 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-bold shadow">
+            Register Account
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">

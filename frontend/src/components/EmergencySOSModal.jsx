@@ -24,7 +24,7 @@ const EMERGENCY_CATEGORIES = [
 ];
 
 export default function EmergencySOSModal({ isOpen, onClose }) {
-  const { userLocation } = useAuth();
+  const { user, userLocation } = useAuth();
   const navigate = useNavigate();
 
   const [selectedCategory, setSelectedCategory] = useState('personal_safety');
@@ -130,6 +130,12 @@ export default function EmergencySOSModal({ isOpen, onClose }) {
 
   // Dispatch SOS request to Backend
   const dispatchSOS = async () => {
+    if (!user) {
+      alert('Please sign in or register with your details before dispatching emergency requests.');
+      onClose();
+      navigate('/login');
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await api.post('/requests', {

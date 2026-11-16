@@ -28,7 +28,7 @@ const GENERAL_CATEGORIES = [
 ];
 
 export default function CreateGeneralRequestPage() {
-  const { userLocation } = useAuth();
+  const { user, userLocation } = useAuth();
   const navigate = useNavigate();
 
   const [category, setCategory] = useState('puncture');
@@ -78,6 +78,11 @@ export default function CreateGeneralRequestPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+      alert('Please sign in or register with your details before posting a request.');
+      navigate('/login');
+      return;
+    }
     if (!description.trim()) {
       alert('Please enter a brief description of the help needed.');
       return;

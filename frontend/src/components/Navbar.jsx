@@ -16,7 +16,10 @@ import {
   PhoneCall,
   Clock,
   Compass,
-  Lock
+  Lock,
+  LogOut,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 
 export default function Navbar({ onOpenSOS }) {
@@ -121,33 +124,82 @@ export default function Navbar({ onOpenSOS }) {
           {/* Right Action buttons */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Quick Demo Role Switcher for Examiners */}
-            <div className="hidden sm:flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-              <span className="text-[10px] text-slate-500 uppercase font-bold px-1.5">Demo As:</span>
+            <div className="hidden xl:flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+              <span className="text-[10px] text-slate-500 uppercase font-bold px-1.5">Demo:</span>
               <button
                 onClick={() => loginAsDemo('user')}
-                className={`px-2 py-1 rounded-lg font-semibold transition-all ${
+                className={`px-2 py-0.5 rounded-lg font-semibold transition-all ${
                   user?.id === 'usr_demo_001' ? 'bg-white shadow text-rose-600' : 'text-slate-600 hover:text-slate-900'
                 }`}
+                title="Priya Sharma (Requester Demo)"
               >
-                Requester
+                Priya
               </button>
               <button
                 onClick={() => loginAsDemo('helper')}
-                className={`px-2 py-1 rounded-lg font-semibold transition-all ${
+                className={`px-2 py-0.5 rounded-lg font-semibold transition-all ${
                   user?.id === 'hlp_001' ? 'bg-white shadow text-emerald-600' : 'text-slate-600 hover:text-slate-900'
                 }`}
+                title="Arjun Verma (Helper Demo)"
               >
-                Helper
+                Arjun
               </button>
               <button
                 onClick={() => loginAsDemo('admin')}
-                className={`px-2 py-1 rounded-lg font-semibold transition-all ${
+                className={`px-2 py-0.5 rounded-lg font-semibold transition-all ${
                   user?.role === 'admin' ? 'bg-white shadow text-amber-700' : 'text-slate-600 hover:text-slate-900'
                 }`}
+                title="Admin Demo"
               >
                 Admin
               </button>
             </div>
+
+            {/* User Session HUD: Signed in vs Signed out */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+                >
+                  <img
+                    src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`}
+                    alt={user.name}
+                    className="w-6 h-6 rounded-lg object-cover border border-slate-300"
+                  />
+                  <div className="hidden sm:block text-left text-xs leading-none">
+                    <span className="font-bold text-slate-900 block truncate max-w-[100px]">{user.name}</span>
+                    <span className="text-[10px] text-slate-500 capitalize">
+                      {user.role === 'admin' ? 'Admin' : (user.isHelper ? 'Helper' : 'Requester')}
+                    </span>
+                  </div>
+                </Link>
+                <button
+                  onClick={logout}
+                  className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-100"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center gap-1.5"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Log In</span>
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Register</span>
+                </Link>
+              </div>
+            )}
 
             {/* Big Prominent Emergency SOS button in navbar */}
             <button
@@ -172,6 +224,45 @@ export default function Navbar({ onOpenSOS }) {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-5 space-y-2">
+          {user ? (
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <img
+                  src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-xl object-cover"
+                />
+                <div>
+                  <span className="font-bold text-slate-900 block text-xs">{user.name}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">{user.email || user.phone}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => { logout(); setMobileMenuOpen(false); }}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-100"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 pb-2">
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 text-center text-xs font-bold rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 text-center text-xs font-bold rounded-xl bg-slate-900 text-white shadow-sm"
+              >
+                Create Account
+              </Link>
+            </div>
+          )}
+
           <Link
             to="/dashboard"
             onClick={() => setMobileMenuOpen(false)}
@@ -204,7 +295,7 @@ export default function Navbar({ onOpenSOS }) {
           )}
 
           <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2">
-            <span className="text-xs text-slate-500 w-full font-bold">Switch Demo Account:</span>
+            <span className="text-xs text-slate-500 w-full font-bold">Quick Demo Accounts:</span>
             <button
               onClick={() => { loginAsDemo('user'); setMobileMenuOpen(false); }}
               className="px-2.5 py-1 text-xs bg-slate-100 rounded-md font-medium text-slate-700"
@@ -215,13 +306,13 @@ export default function Navbar({ onOpenSOS }) {
               onClick={() => { loginAsDemo('helper'); setMobileMenuOpen(false); }}
               className="px-2.5 py-1 text-xs bg-emerald-50 text-emerald-700 rounded-md font-medium"
             >
-              Arjun (Verified Helper)
+              Arjun (Helper)
             </button>
             <button
               onClick={() => { loginAsDemo('admin'); setMobileMenuOpen(false); }}
               className="px-2.5 py-1 text-xs bg-amber-50 text-amber-800 rounded-md font-medium"
             >
-              Admin Panel
+              Admin
             </button>
           </div>
         </div>

@@ -36,21 +36,28 @@ export default function LandingPage({ onOpenSOS }) {
           </p>
 
           {/* Call to Actions */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
             <button
               onClick={onOpenSOS}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white font-extrabold text-base shadow-xl shadow-rose-600/30 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-rose-600/30 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
             >
               <AlertTriangle className="w-5 h-5 animate-pulse" />
               <span>Launch Emergency SOS</span>
             </button>
 
             <Link
-              to="/dashboard"
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-base shadow flex items-center justify-center gap-2 transition-all"
+              to="/register"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm sm:text-base shadow flex items-center justify-center gap-2 transition-all"
             >
-              <span>Explore Dashboard</span>
+              <span>Register with Your Details</span>
               <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            <Link
+              to="/login"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm sm:text-base border border-slate-200 shadow-sm flex items-center justify-center gap-2 transition-all"
+            >
+              <span>Sign In</span>
             </Link>
           </div>
 

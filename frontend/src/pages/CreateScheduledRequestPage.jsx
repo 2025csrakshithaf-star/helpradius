@@ -23,7 +23,7 @@ const SCHEDULED_CATEGORIES = [
 ];
 
 export default function CreateScheduledRequestPage() {
-  const { userLocation } = useAuth();
+  const { user, userLocation } = useAuth();
   const navigate = useNavigate();
 
   // Tomorrow morning default date-time
@@ -62,6 +62,11 @@ export default function CreateScheduledRequestPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+      alert('Please sign in or register with your details before scheduling a request.');
+      navigate('/login');
+      return;
+    }
     if (!description.trim()) {
       alert('Please enter a short description of the scheduled help.');
       return;

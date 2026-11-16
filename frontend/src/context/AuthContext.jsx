@@ -41,8 +41,9 @@ export const AuthProvider = ({ children }) => {
   const fetchCurrentUser = async () => {
     const token = localStorage.getItem('help_radius_token');
     if (!token) {
-      // Default to Priya Sharma demo account so user can immediately test!
-      loginAsDemo('user');
+      setUser(null);
+      setHelperProfile(null);
+      setLoading(false);
       return;
     }
     try {
@@ -50,8 +51,10 @@ export const AuthProvider = ({ children }) => {
       setUser(res.data.user);
       setHelperProfile(res.data.helper);
     } catch (err) {
-      console.warn('Could not restore user from token, switching to demo user.');
-      loginAsDemo('user');
+      console.warn('Could not restore user from token:', err);
+      localStorage.removeItem('help_radius_token');
+      setUser(null);
+      setHelperProfile(null);
     } finally {
       setLoading(false);
     }
@@ -61,21 +64,21 @@ export const AuthProvider = ({ children }) => {
     fetchCurrentUser();
   }, []);
 
-  // Login
-  const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
+  // Login with custom email or phone
+  const login = async (identifier, password) => {
+    const res = await api.post('/auth/login', { identifier, password });
     localStorage.setItem('help_radius_token', res.data.token);
     setUser(res.data.user);
-    const meRes = await api.get('/users/me');
-    setHelperProfile(meRes.data.helper);
+    setHelperProfile(res.data.helper || null);
     return res.data;
   };
 
-  // Register
+  // Register with full custom details
   const register = async (userData) => {
     const res = await api.post('/auth/register', userData);
     localStorage.setItem('help_radius_token', res.data.token);
     setUser(res.data.user);
+    setHelperProfile(res.data.helper || null);
     return res.data;
   };
 

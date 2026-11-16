@@ -21,6 +21,7 @@ export default function HelperInboxPage() {
   const navigate = useNavigate();
 
   const [inboxRequests, setInboxRequests] = useState([]);
+  const [declinedIds, setDeclinedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [acceptingId, setAcceptingId] = useState(null);
 
@@ -48,7 +49,9 @@ export default function HelperInboxPage() {
       alert('Request accepted successfully! Navigating to live command center.');
       navigate(`/requests/${requestId}`);
     } catch (err) {
-      if (err.response?.status === 409) {
+      if (err.response?.status === 410) {
+        alert('This request was cancelled by the requester and is no longer available.');
+      } else if (err.response?.status === 409) {
         alert('Another nearby helper already accepted this request.');
       } else {
         alert(err.response?.data?.message || 'Could not accept request.');
@@ -127,11 +130,11 @@ export default function HelperInboxPage() {
             <h2 className="text-lg font-black text-slate-900">Nearby Incoming Requests</h2>
           </div>
           <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-            {inboxRequests.length} pending
+            {inboxRequests.filter(req => !declinedIds.has(req.id)).length} pending
           </span>
         </div>
 
-        {inboxRequests.length === 0 ? (
+        {inboxRequests.filter(req => !declinedIds.has(req.id)).length === 0 ? (
           <div className="bg-white rounded-3xl p-12 border border-dashed border-slate-200 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center mx-auto">
               <Radio className="w-6 h-6 animate-pulse" />
@@ -143,7 +146,7 @@ export default function HelperInboxPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {inboxRequests.map(req => {
+            {inboxRequests.filter(req => !declinedIds.has(req.id)).map(req => {
               const isSOS = req.type === 'emergency';
               return (
                 <div
@@ -196,7 +199,7 @@ export default function HelperInboxPage() {
                   {/* Action Buttons */}
                   <div className="flex items-center justify-end gap-3 pt-2">
                     <button
-                      onClick={() => setInboxRequests(prev => prev.filter(r => r.id !== req.id))}
+                      onClick={() => setDeclinedIds(prev => new Set(prev).add(req.id))}
                       className="px-4 py-2.5 rounded-xl text-slate-500 hover:bg-slate-100 text-xs font-bold"
                     >
                       Decline

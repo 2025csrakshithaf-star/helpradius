@@ -211,6 +211,12 @@ class RequestController {
 
     // Atomic race-condition check
     if (request.status !== 'searching' && request.status !== 'scheduled') {
+      if (request.status === 'cancelled') {
+        return res.status(410).json({
+          error: 'RequestCancelled',
+          message: 'This request was cancelled by the requester and is no longer available.'
+        });
+      }
       return res.status(409).json({
         error: 'AlreadyAccepted',
         message: 'This request has already been accepted by another helper.'
@@ -373,9 +379,13 @@ class RequestController {
   // Cancel Request
   async cancelRequest(req, res) {
     const { id } = req.params;
-    const { reason } = req.body;
+    const { reason } = req.body || {};
     const request = db.requests.get(id);
-    if (!request) return res.status(404).json({ error: 'NotFound' });
+    if (!request) return res.status(404).json({ error: 'NotFound', message: 'Request not found' });
+
+    if (request.status === 'completed') {
+      return res.status(400).json({ error: 'AlreadyCompleted', message: 'Completed requests cannot be cancelled.' });
+    }
 
     request.status = 'cancelled';
     request.cancelledAt = new Date().toISOString();
@@ -395,9 +405,20 @@ class RequestController {
     }
 
     db.requests.set(id, request);
-    db.logAudit('REQUEST_CANCELLED', req.user.id, { requestId: id, reason });
+    db.logAudit('REQUEST_CANCELLED', req.user.id, { requestId: id, reason: request.cancellationReason });
 
-    return res.json({ message: 'Request cancelled', request });
+    // If helper was accepted, notify them
+    if (request.acceptedHelperId) {
+      await notificationService.sendToUser(request.acceptedHelperId, {
+        title: 'Request Cancelled',
+        body: `The assistance request has been cancelled (${request.cancellationReason}).`,
+        requestId: id,
+        type: 'cancelled',
+        priority: 'high'
+      });
+    }
+
+    return res.json({ message: 'Request cancelled successfully', request });
   }
 
   // Reschedule (Scheduled help only)

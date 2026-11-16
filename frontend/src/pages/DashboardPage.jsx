@@ -49,14 +49,42 @@ export default function DashboardPage({ onOpenSOS }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Guest Notice (When not signed in) */}
+      {!user && (
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-6 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-slate-700">
+          <div>
+            <span className="font-extrabold text-base block">You are browsing in Guest Mode</span>
+            <span className="text-xs text-slate-300">
+              Sign in with your account or register with your details to save your emergency contacts and broadcast help requests.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/login"
+              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/register"
+              className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all"
+            >
+              Register with My Details
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner / Location & Emergency Contacts HUD */}
       <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Welcome back</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            {user ? 'Welcome back' : 'Community Radar'}
+          </span>
           <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-            <span>{user?.name || 'Priya Sharma'}</span>
+            <span>{user ? user.name : 'Guest Community Member'}</span>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border">
-              {user?.role === 'admin' ? 'Administrator' : 'Community Member'}
+              {user?.role === 'admin' ? 'Administrator' : (user?.isHelper ? 'Verified Volunteer' : 'Community Member')}
             </span>
           </h1>
           <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-600">
