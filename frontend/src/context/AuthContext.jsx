@@ -82,26 +82,6 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   };
 
-  // Quick Switcher for College Project Demo (Requester <-> Helper <-> Admin)
-  const loginAsDemo = async (role = 'user') => {
-    setLoading(true);
-    let email = 'priya@example.com';
-    if (role === 'helper') email = 'arjunverma@helpradius.org';
-    if (role === 'admin') email = 'admin@helpradius.org';
-
-    try {
-      const res = await api.post('/auth/login', { email, password: 'password123' });
-      localStorage.setItem('help_radius_token', res.data.token);
-      setUser(res.data.user);
-      const meRes = await api.get('/users/me');
-      setHelperProfile(meRes.data.helper);
-    } catch (e) {
-      console.error('Demo login failed', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Logout
   const logout = () => {
     localStorage.removeItem('help_radius_token');
@@ -133,7 +113,6 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        loginAsDemo,
         toggleAvailability,
         refreshUser: fetchCurrentUser
       }}

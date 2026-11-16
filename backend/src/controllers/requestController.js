@@ -41,8 +41,10 @@ class RequestController {
 
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
-    // Automatically relocate seed helpers dynamically around requester coords so the demo works anywhere!
-    db.relocateSeedHelpersAround(location.lat, location.lng);
+    // Automatically relocate seed helpers dynamically around requester coords if present
+    if (typeof db.relocateSeedHelpersAround === 'function') {
+      db.relocateSeedHelpersAround(location.lat, location.lng);
+    }
 
     const newRequest = {
       id: requestId,
@@ -75,6 +77,7 @@ class RequestController {
     };
 
     db.requests.set(requestId, newRequest);
+    db.saveRequests();
 
     // 1. If Emergency SOS: alert all saved emergency contacts in parallel regardless of distance!
     const contactAlertList = [];
@@ -244,6 +247,8 @@ class RequestController {
     request.acceptedHelperId = helperId;
     request.acceptedAt = new Date().toISOString();
     db.requests.set(id, request);
+    db.saveRequests();
+    db.saveRequests();
 
     // Create Tracking Session
     const distanceKm = calculateHaversineDistance(
@@ -317,6 +322,8 @@ class RequestController {
 
     request.status = 'in_progress';
     db.requests.set(id, request);
+    db.saveRequests();
+    db.saveRequests();
 
     return res.json({ message: 'Request status set to in_progress', request });
   }
@@ -366,6 +373,8 @@ class RequestController {
 
     request.finalPricing = pricing;
     db.requests.set(id, request);
+    db.saveRequests();
+    db.saveRequests();
 
     db.logAudit('REQUEST_COMPLETED', req.user.id, { requestId: id, pricing });
 
@@ -405,6 +414,7 @@ class RequestController {
     }
 
     db.requests.set(id, request);
+    db.saveRequests();
     db.logAudit('REQUEST_CANCELLED', req.user.id, { requestId: id, reason: request.cancellationReason });
 
     // If helper was accepted, notify them
@@ -438,6 +448,7 @@ class RequestController {
     request.acceptedHelperId = null; // reset acceptance for new date
 
     db.requests.set(id, request);
+    db.saveRequests();
     return res.json({ message: 'Request rescheduled successfully', request });
   }
 
@@ -459,6 +470,7 @@ class RequestController {
 
     request.media.push(mediaItem);
     db.requests.set(id, request);
+    db.saveRequests();
 
     return res.status(201).json({ message: 'Media attached', media: mediaItem });
   }
@@ -488,6 +500,7 @@ class RequestController {
     }
 
     db.requests.set(id, request);
+    db.saveRequests();
     return res.json({ message: 'Rating recorded. Thank you for your feedback!', request });
   }
 }

@@ -88,13 +88,14 @@ npm run dev
 
 ---
 
-## 👥 Demo Accounts (1-Click Switcher)
+## 👥 Authentication & Roles (Registration & Persistent Login)
 
-A built-in **"Demo As"** switcher in the top navigation bar allows evaluators and teammates to alternate between roles with a single click:
+Help Radius features a secure, database-persisted authentication system:
 
-1. **Requester (Priya Sharma)**: Default user who can trigger Emergency SOS, General Help, or Scheduled Help.
-2. **Verified Helper (Arjun Verma)**: CPR-certified volunteer who receives nearby alerts in the **Helper Inbox**, accepts requests, and chats/calls.
-3. **Administrator (System Admin)**: Accesses `/admin` to review volunteer ID applications, certify helpers for personal safety, suspend users, and view audit logs.
+1. **User Registration**: First-time visitors register with Full Name, Email, Mobile Number, Password, and a mandatory **Verification ID Number** (Aadhaar, Voter ID, Driving License, Student ID, or Passport). Users can register as a **Requester** or a **Community Helper / Volunteer** and add custom emergency contacts.
+2. **Persistent Login**: Registered users log in with their Email or Mobile and Password. Account data, emergency contacts, and personal request history are verified and loaded from the persistent database.
+3. **Helper / Acceptor Role**: Users who register as a helper receive nearby requests in their **Helper Inbox**, accept requests with an atomic lock, and assist requesters via live tracking and private chat.
+4. **Administrator (`admin@helpradius.org` / `password123`)**: Accesses `/admin` to review volunteer verification credentials, certify helpers for personal safety, manage users, and view system audit logs.
 
 ---
 

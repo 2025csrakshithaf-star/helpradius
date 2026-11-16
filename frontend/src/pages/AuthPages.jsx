@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
 import {
   AlertTriangle,
   User,
@@ -10,7 +9,6 @@ import {
   Phone,
   ShieldCheck,
   Compass,
-  Bell,
   ArrowRight,
   CheckCircle2,
   MapPin,
@@ -20,11 +18,13 @@ import {
   Flame,
   HeartPulse,
   Wrench,
-  Car
+  Car,
+  IdCard,
+  CreditCard
 } from 'lucide-react';
 
 export function LoginPage() {
-  const { login, loginAsDemo } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const [identifier, setIdentifier] = useState('');
@@ -34,42 +34,45 @@ export function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!identifier) {
-      setErrorMessage('Please enter your email or mobile phone number.');
+    if (!identifier.trim()) {
+      setErrorMessage('Please enter your registered email address or mobile phone number.');
       return;
     }
+    if (!password) {
+      setErrorMessage('Please enter your password.');
+      return;
+    }
+
     setSubmitting(true);
     setErrorMessage('');
     try {
-      await login(identifier, password);
+      await login(identifier.trim(), password);
       navigate('/dashboard');
     } catch (err) {
-      setErrorMessage(err.response?.data?.message || 'Login failed. Please check credentials or register a new account.');
+      setErrorMessage(
+        err.response?.data?.message || 'Login failed. Please verify your email/phone and password.'
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDemoFill = (email, pass = 'password123') => {
-    setIdentifier(email);
-    setPassword(pass);
-    setErrorMessage('');
-  };
-
   return (
-    <div className="max-w-md mx-auto px-4 py-12 space-y-6">
+    <div className="max-w-md mx-auto px-4 py-16 space-y-6">
       <div className="text-center space-y-2">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-red-500 text-white flex items-center justify-center mx-auto shadow-md shadow-rose-600/30">
           <AlertTriangle className="w-6 h-6" />
         </div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Sign In to Help Radius</h1>
-        <p className="text-xs text-slate-500">Access emergency dispatch radar & community assistance network</p>
+        <p className="text-xs text-slate-500">
+          Enter your registered email ID and password to access your dashboard
+        </p>
       </div>
 
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
         {errorMessage && (
-          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-600" />
+          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-600 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -77,12 +80,12 @@ export function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Email or Mobile Number
+              Email Address or Mobile Number
             </label>
             <div className="relative">
               <input
                 type="text"
-                placeholder="you@example.com or +919876543210"
+                placeholder="your.email@example.com or +919876543210"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full p-3.5 pl-11 rounded-2xl border border-slate-200 text-sm outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10 transition-all font-medium"
@@ -93,15 +96,13 @@ export function LoginPage() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Password
-              </label>
-            </div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Password
+            </label>
             <div className="relative">
               <input
                 type="password"
-                placeholder="Enter your password"
+                placeholder="Enter your account password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full p-3.5 pl-11 rounded-2xl border border-slate-200 text-sm outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10 transition-all font-medium"
@@ -117,57 +118,20 @@ export function LoginPage() {
             className="w-full py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-extrabold text-sm shadow-md shadow-rose-600/30 transition-all flex items-center justify-center gap-2"
           >
             {submitting ? (
-              <span>Authenticating...</span>
+              <span>Verifying Credentials...</span>
             ) : (
               <>
-                <span>Sign In to Account</span>
+                <span>Sign In to Dashboard</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="relative flex py-1 items-center">
-          <div className="flex-grow border-t border-slate-200"></div>
-          <span className="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Or use pre-seeded demo</span>
-          <div className="flex-grow border-t border-slate-200"></div>
-        </div>
-
-        {/* Quick Demo Logins for Examiner testing */}
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => handleDemoFill('priya@example.com')}
-            className="p-2.5 rounded-xl border border-slate-200 hover:border-rose-300 hover:bg-rose-50/50 text-left transition-all"
-          >
-            <span className="block text-xs font-bold text-slate-900 truncate">Priya Sharma</span>
-            <span className="text-[10px] text-rose-600 font-semibold block">Requester</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleDemoFill('arjunverma@helpradius.org')}
-            className="p-2.5 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 text-left transition-all"
-          >
-            <span className="block text-xs font-bold text-slate-900 truncate">Arjun Verma</span>
-            <span className="text-[10px] text-emerald-600 font-semibold block">Helper</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleDemoFill('admin@helpradius.org')}
-            className="p-2.5 rounded-xl border border-slate-200 hover:border-amber-300 hover:bg-amber-50/50 text-left transition-all"
-          >
-            <span className="block text-xs font-bold text-slate-900 truncate">Sys Admin</span>
-            <span className="text-[10px] text-amber-700 font-semibold block">Admin</span>
-          </button>
-        </div>
-
-        <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
-          New to Help Radius?{' '}
+        <div className="pt-3 text-center text-xs text-slate-500 border-t border-slate-100">
+          First time here?{' '}
           <Link to="/register" className="font-extrabold text-rose-600 hover:text-rose-700 hover:underline">
-            Create an Account with your details &rarr;
+            Register your account &rarr;
           </Link>
         </div>
       </div>
@@ -183,11 +147,14 @@ export function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Step 1: Personal Profile
+  // Step 1: Personal Profile & Verification ID
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('+91');
+  const [idType, setIdType] = useState('Aadhaar Card');
+  const [verificationId, setVerificationId] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [address, setAddress] = useState(userLocation?.address || 'Bengaluru Central, Karnataka');
   const [accountType, setAccountType] = useState('user'); // 'user' (Requester) or 'helper' (Volunteer)
 
@@ -205,9 +172,7 @@ export function RegisterPage() {
     'roadside'
   ]);
 
-  // Step 3: Verification & Consents
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
+  // Step 3: Device Permissions & Confirm
   const [locationConsent, setLocationConsent] = useState(true);
   const [notifConsent, setNotifConsent] = useState(true);
 
@@ -217,26 +182,34 @@ export function RegisterPage() {
     );
   };
 
-  const sendSimulatedOtp = async () => {
-    try {
-      const res = await api.post('/auth/send-otp', { phone });
-      setOtpSent(true);
-      setOtp('123456'); // auto-fill simulated OTP for test convenience
-    } catch (e) {
-      console.warn('Simulated OTP notice', e);
-      setOtpSent(true);
-      setOtp('123456');
-    }
-  };
-
   const handleStep1Next = (e) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      setErrorMessage('Please enter your full name and email address.');
+    if (!name.trim()) {
+      setErrorMessage('Please enter your full name.');
       return;
     }
+    if (!email.trim() || !email.includes('@')) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+    if (!phone.trim() || phone.trim() === '+91') {
+      setErrorMessage('Please enter your mobile phone number.');
+      return;
+    }
+    if (!verificationId.trim()) {
+      setErrorMessage('Please enter your Verification ID number (e.g. Aadhaar / Voter ID / Student ID).');
+      return;
+    }
+    if (!password || password.length < 4) {
+      setErrorMessage('Password must be at least 4 characters long.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match. Please re-enter your password.');
+      return;
+    }
+
     setErrorMessage('');
-    sendSimulatedOtp();
     setStep(2);
   };
 
@@ -251,7 +224,7 @@ export function RegisterPage() {
     setErrorMessage('');
 
     try {
-      const emergencyContacts = contactName.trim() ? [
+      const emergencyContacts = contactName.trim() && contactPhone.trim() && contactPhone.trim() !== '+91' ? [
         {
           name: contactName.trim(),
           phone: contactPhone.trim(),
@@ -261,8 +234,10 @@ export function RegisterPage() {
 
       await register({
         name: name.trim(),
-        email: email.trim(),
+        email: email.toLowerCase().trim(),
         phone: phone.trim(),
+        verificationId: verificationId.trim(),
+        idType,
         password,
         address: address.trim(),
         role: accountType,
@@ -282,7 +257,7 @@ export function RegisterPage() {
 
       navigate('/dashboard');
     } catch (e) {
-      setErrorMessage(e.response?.data?.message || 'Registration could not be completed. Please try again.');
+      setErrorMessage(e.response?.data?.message || 'Registration failed. Please check details and try again.');
       setStep(1);
     } finally {
       setSubmitting(false);
@@ -293,9 +268,11 @@ export function RegisterPage() {
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Create Your Help Radius Account</h1>
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          Help Radius Registration
+        </h1>
         <p className="text-xs text-slate-500">
-          Enter your details to join the location-based emergency and community assistance network
+          Enter your personal and verification details to create and verify your account
         </p>
 
         {/* Stepper HUD */}
@@ -304,34 +281,34 @@ export function RegisterPage() {
             step === 1 ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'
           }`}>
             <span>1</span>
-            <span>Profile Details</span>
+            <span>Profile & ID</span>
           </div>
           <div className="w-4 h-0.5 bg-slate-200" />
           <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${
             step === 2 ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'
           }`}>
             <span>2</span>
-            <span>{accountType === 'helper' ? 'Volunteer Setup' : 'Safety Contacts'}</span>
+            <span>{accountType === 'helper' ? 'Volunteer Setup' : 'Emergency Contact'}</span>
           </div>
           <div className="w-4 h-0.5 bg-slate-200" />
           <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${
             step === 3 ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'
           }`}>
             <span>3</span>
-            <span>Verification</span>
+            <span>Confirmation</span>
           </div>
         </div>
       </div>
 
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
         {errorMessage && (
-          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-600" />
+          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-600 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
         )}
 
-        {/* STEP 1: PERSONAL DETAILS & ROLE */}
+        {/* STEP 1: PERSONAL DETAILS, ID VERIFICATION & ROLE */}
         {step === 1 && (
           <form onSubmit={handleStep1Next} className="space-y-5">
             {/* Account Type Selector */}
@@ -357,7 +334,7 @@ export function RegisterPage() {
                   <div>
                     <span className="font-extrabold text-sm text-slate-900 block">Community Requester</span>
                     <span className="text-[11px] text-slate-500 leading-snug block mt-0.5">
-                      Launch Emergency SOS, request roadside help, and book companions.
+                      Seek Emergency SOS, roadside flat tyre help, and companion assistance.
                     </span>
                   </div>
                 </button>
@@ -379,14 +356,14 @@ export function RegisterPage() {
                   <div>
                     <span className="font-extrabold text-sm text-slate-900 block">Volunteer / First-Responder</span>
                     <span className="text-[11px] text-slate-500 leading-snug block mt-0.5">
-                      Receive alerts in my radius, assist neighbors, and earn distance compensation.
+                      Respond to nearby alerts in your radius and assist people in distress.
                     </span>
                   </div>
                 </button>
               </div>
             </div>
 
-            {/* Name & Email */}
+            {/* Full Name & Email */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -395,7 +372,7 @@ export function RegisterPage() {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Enter your full name"
+                    placeholder="Enter your full legal name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full p-3.5 pl-10 rounded-2xl border border-slate-200 text-sm outline-none focus:border-rose-500"
@@ -412,7 +389,7 @@ export function RegisterPage() {
                 <div className="relative">
                   <input
                     type="email"
-                    placeholder="name@example.com"
+                    placeholder="yourname@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full p-3.5 pl-10 rounded-2xl border border-slate-200 text-sm outline-none focus:border-rose-500"
@@ -423,7 +400,7 @@ export function RegisterPage() {
               </div>
             </div>
 
-            {/* Phone & Password */}
+            {/* Mobile Number & City */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -444,12 +421,78 @@ export function RegisterPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  City / Locality Address
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="e.g. Mysuru / Bengaluru Central"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full p-3.5 pl-10 rounded-2xl border border-slate-200 text-sm outline-none focus:border-rose-500"
+                  />
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* VERIFICATION ID SECTION (REQUIRED) */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="flex items-center gap-2">
+                <IdCard className="w-5 h-5 text-rose-600" />
+                <span className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
+                  Identity Verification ID Details *
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Required for safety verification and emergency accountability.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                    ID Document Type
+                  </label>
+                  <select
+                    value={idType}
+                    onChange={(e) => setIdType(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs outline-none focus:border-rose-500 bg-white font-medium"
+                  >
+                    <option value="Aadhaar Card">Aadhaar Card</option>
+                    <option value="Driving License">Driving License</option>
+                    <option value="Voter ID Card">Voter ID Card</option>
+                    <option value="College / Student ID">College / Student ID</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Government Employee ID">Government Employee ID</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                    Verification ID Number *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1234-5678-9012 or DL-12345"
+                    value={verificationId}
+                    onChange={(e) => setVerificationId(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs outline-none focus:border-rose-500 font-mono font-bold"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Password & Confirm Password */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Create Password *
                 </label>
                 <div className="relative">
                   <input
                     type="password"
-                    placeholder="At least 6 characters"
+                    placeholder="At least 4 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full p-3.5 pl-10 rounded-2xl border border-slate-200 text-sm outline-none focus:border-rose-500"
@@ -458,22 +501,22 @@ export function RegisterPage() {
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
                 </div>
               </div>
-            </div>
 
-            {/* City / Locality Address */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Your Primary City / Neighborhood
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="e.g. Indiranagar, Bangalore"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full p-3.5 pl-10 rounded-2xl border border-slate-200 text-sm outline-none focus:border-rose-500"
-                />
-                <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Confirm Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder="Re-enter password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full p-3.5 pl-10 rounded-2xl border border-slate-200 text-sm outline-none focus:border-rose-500"
+                    required
+                  />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
+                </div>
               </div>
             </div>
 
@@ -490,16 +533,15 @@ export function RegisterPage() {
         {/* STEP 2: SAFETY CONTACTS & VOLUNTEER CAPABILITIES */}
         {step === 2 && (
           <form onSubmit={handleStep2Next} className="space-y-6">
-            {/* Primary Emergency Contact */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 <h3 className="text-sm font-extrabold text-slate-900">
-                  Primary Emergency Contact (Notified immediately during SOS)
+                  Primary Emergency Contact (Notified during SOS)
                 </h3>
               </div>
               <p className="text-xs text-slate-500">
-                This contact will receive SMS & WhatsApp broadcasts whenever you trigger SOS, regardless of geographic distance.
+                Enter your real family or friend contact. This contact will be automatically broadcast whenever you trigger Emergency SOS.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -507,7 +549,7 @@ export function RegisterPage() {
                   <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Contact Name</label>
                   <input
                     type="text"
-                    placeholder="e.g. Papa / Ramesh"
+                    placeholder="e.g. Ramesh (Father)"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     className="w-full p-3 rounded-xl border border-slate-200 text-xs outline-none focus:border-rose-500"
@@ -515,10 +557,10 @@ export function RegisterPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Phone Number</label>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Mobile Number</label>
                   <input
                     type="tel"
-                    placeholder="+919811223344"
+                    placeholder="+919876543210"
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
                     className="w-full p-3 rounded-xl border border-slate-200 text-xs outline-none focus:border-rose-500 font-mono"
@@ -549,11 +591,8 @@ export function RegisterPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-extrabold text-sm text-slate-900 block">Volunteer Rescue Capabilities</span>
-                    <span className="text-xs text-slate-500">Select categories you are ready to assist with</span>
+                    <span className="text-xs text-slate-500">Categories you are equipped to assist with in your radius</span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                    Auto-Verified Prototype
-                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
@@ -599,33 +638,26 @@ export function RegisterPage() {
                 type="submit"
                 className="flex-1 py-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2"
               >
-                <span>Continue to Verification</span>
+                <span>Continue to Confirmation</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </form>
         )}
 
-        {/* STEP 3: OTP VERIFICATION & CONSENT */}
+        {/* STEP 3: CONFIRMATION & DEVICE CONSENTS */}
         {step === 3 && (
           <div className="space-y-6">
-            <div className="p-4 rounded-2xl bg-rose-50/50 border border-rose-100 text-center space-y-2">
-              <span className="text-xs text-slate-600 block">
-                Verification code sent to <strong>{phone || 'your phone'}</strong>
-              </span>
-              <div className="max-w-xs mx-auto">
-                <input
-                  type="text"
-                  maxLength={6}
-                  placeholder="123456"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="w-full p-3.5 text-center text-2xl font-mono tracking-[0.4em] font-extrabold rounded-2xl border border-slate-200 outline-none focus:border-rose-500 bg-white shadow-inner"
-                />
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <span className="text-xs font-bold text-slate-800 uppercase block">Account Summary</span>
+              <div className="text-xs text-slate-600 space-y-1">
+                <div><strong>Full Name:</strong> {name}</div>
+                <div><strong>Email:</strong> {email}</div>
+                <div><strong>Mobile:</strong> {phone}</div>
+                <div><strong>Verification ID:</strong> {verificationId} ({idType})</div>
+                <div><strong>Account Role:</strong> {accountType === 'helper' ? 'Volunteer Helper' : 'Community Requester'}</div>
+                <div><strong>Primary Emergency Contact:</strong> {contactName ? `${contactName} (${contactPhone}) - ${contactRelation}` : 'None added (can add anytime in Profile)'}</div>
               </div>
-              <span className="text-[11px] text-slate-400 block">
-                (Prototype Testing Code: <strong className="text-rose-600 font-mono">123456</strong>)
-              </span>
             </div>
 
             {/* Permissions */}
@@ -640,7 +672,7 @@ export function RegisterPage() {
                   className="mt-0.5 rounded text-rose-600"
                 />
                 <span className="text-slate-700">
-                  <strong>Precise GPS Geofencing:</strong> Grant permission to accurately calculate distance and dynamic radius expansion during emergencies.
+                  <strong>Precise GPS Geofencing:</strong> Grant permission to calculate distance and dynamic radius expansion for live assistance.
                 </span>
               </label>
 
@@ -652,7 +684,7 @@ export function RegisterPage() {
                   className="mt-0.5 rounded text-rose-600"
                 />
                 <span className="text-slate-700">
-                  <strong>Push Alert Notifications:</strong> Allow incoming requests, helper dispatch updates, and private tracking signals.
+                  <strong>Emergency Alerts & Notifications:</strong> Receive incoming requests, helper dispatch updates, and private tracking signals.
                 </span>
               </label>
             </div>
@@ -672,11 +704,11 @@ export function RegisterPage() {
                 className="flex-1 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2"
               >
                 {submitting ? (
-                  <span>Creating Account...</span>
+                  <span>Registering Account in Database...</span>
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    <span>Complete Registration & Launch Dashboard</span>
+                    <span>Complete Registration & Open Dashboard</span>
                   </>
                 )}
               </button>
@@ -685,9 +717,9 @@ export function RegisterPage() {
         )}
 
         <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
-          Already have an account?{' '}
+          Already registered?{' '}
           <Link to="/login" className="font-extrabold text-rose-600 hover:text-rose-700 hover:underline">
-            Sign In here &rarr;
+            Sign In with Email & Password &rarr;
           </Link>
         </div>
       </div>

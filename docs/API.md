@@ -36,25 +36,28 @@ Sends simulated OTP for phone verification.
 - **Response (200):** `{ "success": true, "simulatedOtp": "123456" }`
 
 ### `POST /api/auth/register`
-Multi-step user registration with permissions and emergency contacts.
+Multi-step user registration with mandatory Verification ID, permissions, and emergency contacts.
 - **Body:**
   ```json
   {
-    "name": "Priya Sharma",
-    "email": "priya@example.com",
-    "phone": "+919822334455",
-    "password": "password123",
+    "name": "User Name",
+    "email": "user@example.com",
+    "phone": "+919876543210",
+    "password": "securepassword",
+    "verificationId": "ID-9876543210",
+    "idType": "Aadhaar Card",
+    "role": "user",
     "emergencyContacts": [
-      { "name": "Papa", "phone": "+919822001122", "relationship": "Father" }
+      { "name": "Emergency Contact", "phone": "+919800011122", "relationship": "Family" }
     ],
     "permissions": { "locationGranted": true, "notificationsGranted": true }
   }
   ```
-- **Response (201):** `{ "message": "Account created", "user": {...}, "token": "jwt..." }`
+- **Response (201):** `{ "message": "Account created successfully", "user": {...}, "token": "jwt..." }`
 
 ### `POST /api/auth/login`
-Authenticate user or administrator.
-- **Body:** `{ "email": "priya@example.com", "password": "password123" }`
+Authenticate user or administrator against persistent database.
+- **Body:** `{ "email": "user@example.com", "password": "securepassword" }`
 - **Response (200):** `{ "user": {...}, "token": "jwt..." }`
 
 ### `GET /api/users/me/emergency-contacts`
